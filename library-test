@@ -1,0 +1,117 @@
+import Foundation
+import ArgumentParser
+
+struct Book {
+    var title: String
+    var genre: String
+    var status: String
+}
+
+struct Library {
+    var books: [Book] = []
+    
+    mutating func addBook(title: String, genre: String, status: String) {
+        let newBook = Book(title: title, genre: genre, status: status)
+        books.append(newBook)
+    }
+    
+    func listBooks() {
+        print("Listing all titles saved in the library...")
+        for book in books {
+            print("Title: \(book.title), Genre: \(book.genre), Status: \(book.status)")
+        }
+    }
+    
+    mutating func deleteBook(title: String) {
+        if let index = books.firstIndex(where: { $0.title == title }) {
+            books.remove(at: index)
+            print("\(title) has been deleted from the library.")
+        } else {
+            print("\(title) not found in the library.")
+        }
+    }
+    
+    mutating func editBook(title: String, newStatus: String) {
+        if let index = books.firstIndex(where: { $0.title == title }) {
+            books[index].status = newStatus
+            print("\(title) status has been updated to \(newStatus).")
+        } else {
+            print("\(title) not found in the library.")
+        }
+    }
+}
+
+@main
+struct Codebooks: ParsableCommand {
+    static var configuration = CommandConfiguration(
+        commandName: "codebooks",
+        abstract: "A tool for organizing your books.",
+        subcommands: [Lib.self, Add.self, Delete.self, Edit.self]
+    )
+}
+
+struct Lib: ParsableCommand {
+    static var configuration = CommandConfiguration(
+        abstract: "List all items in the library",
+        discussion: "Lists all titles that have already been saved"
+    )
+    
+    func run() {
+        Library().listBooks()
+    }
+}
+
+struct Add: ParsableCommand {
+    static var configuration = CommandConfiguration(
+        abstract: "Add a new item to the library",
+        discussion: "Add a new book to the library"
+    )
+    
+    @Argument(help: "The title of the book to add.")
+    var title: String
+    
+    @Argument(help: "The genre of the book.")
+    var genre: String
+    
+    @Argument(help: "The status of the book.")
+    var status: String
+    
+    func run() {
+        var library = Library()
+        library.addBook(title: title, genre: genre, status: status)
+        print("\(title) has been added to the library.")
+    }
+}
+
+struct Delete: ParsableCommand {
+    static var configuration = CommandConfiguration(
+        abstract: "Delete an item from the library",
+        discussion: "Delete a book from the library"
+    )
+    
+    @Argument(help: "The title of the book to delete.")
+    var title: String
+    
+    func run() {
+        var library = Library()
+        library.deleteBook(title: title)
+    }
+}
+
+struct Edit: ParsableCommand {
+    static var configuration = CommandConfiguration(
+        abstract: "Edit an item in the library",
+        discussion: "Edit a book in the library"
+    )
+    
+    @Argument(help: "The title of the book to edit.")
+    var title: String
+    
+    @Argument(help: "The new status of the book.")
+    var newStatus: String
+    
+    func run() {
+        var library = Library()
+        library.editBook(title: title, newStatus: newStatus)
+    }
+}
