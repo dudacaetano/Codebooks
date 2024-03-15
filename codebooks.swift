@@ -7,7 +7,7 @@
 import Foundation
 import ArgumentParser
 
-struct Nomes: Codable {
+struct database: Codable {
     var titulo: String
     var genero: String
     var status: String
@@ -15,10 +15,10 @@ struct Nomes: Codable {
 }
 
 struct Estante: Codable {
-    var books: [Nomes] = []
+    var books: [database] = []
     
     mutating func addbook(titulo: String, genero: String, status: String) {
-        let novolivro = Nomes(titulo: titulo, genero: genero, status: status)
+        let novolivro = database(titulo: titulo, genero: genero, status: status)
         books.append(novolivro)
         do {
             try Persistence.saveJson(self, file: "estante.json")
@@ -26,14 +26,63 @@ struct Estante: Codable {
             print("Erro salvando estante", error)
         }
     }
-    func listbook() {
-        for livro in books {
-            print(" itens \(books)")
-            print("titulo: \(livro.titulo), genero: \(livro.genero), status: \(livro.status)")
-
+    mutating func delbook(titulo: String) {
+        books.removeAll(where: { $0.titulo == titulo })
+        do {
+            try Persistence.saveJson(self, file: "estante.json")
+        } catch {
+            print("Erro salvando estante", error)
+        }
+    }
+    mutating func editbook(titulo: String, editstatus: String){
+        if let position = books.firstIndex(where: { $0.titulo == titulo}){
+            books[position].status = editstatus
+        }
+        do {
+            try Persistence.saveJson(self, file: "estante.json")
+        } catch {
+            print("Erro salvando estante", error)
         }
     }
 
+    func listbook() {
+        var count: Int = 1
+        for livro in books {
+            print("livro \(count): \(livro)")
+            count += 1
+        }
+    }
+    
+    func filterbookgenre(genero: String){
+        var genreFilterBook: [database] = []
+        var count: Int = 1
+        for livro in books {
+            if livro.genero.contains(genero){
+                genreFilterBook.append(livro)
+            }
+        }
+        print("These are all the books saved with the genre: \(genero)")
+        for livro in genreFilterBook {
+            print("livro \(count): \(livro)")
+            count += 1
+        }
+    }
+    
+    func filterbookstatus(status: String){
+        var statusFilterBook: [database] = []
+        var count: Int = 1
+        for livro in books {
+            if livro.status.contains(status){
+                statusFilterBook.append(livro)
+            }
+        }
+        print("These are all the books saved with the status: \(status)")
+        for livro in statusFilterBook {
+            print("livro \(count): \(livro)")
+            count += 1
+        }
+    }
+    
 }
 
 var estante: Estante = (try? Persistence.readJson(file: "estante.json")) ?? Estante()
@@ -47,31 +96,35 @@ struct codebooks: ParsableCommand {
     )
     mutating func run() throws {
         Persistence.projectName = "codebooks"
+        print("programa inicio")
     }
 }
 struct lib: ParsableCommand {
     static var configuration = CommandConfiguration(
-        abstract: "lista todos os itens da lista",
+        abstract: "list all list items",
         usage: "codebooks lib [option]",
         discussion: "List all titles that have already been saved"
     )
     
-    @Flag(name: .shortAndLong, help: "todos os itens da lista que já foram salvos")
+    @Flag(name: .shortAndLong, help: "list all tittles that have already been saved ")
     var all: Bool = false
     
-    @Option(name: .short, help: "filtra os titulos por genero")
+    @Option(name: .short, help: "filter the book according to genre")
     var generofiltro: String?
     
-    @Option(name: .short, help: "filtra os tituloa por status de leitura")
+    @Option(name: .short, help: "filter the book according to reading status")
     var statusfiltro: String?
     
     func run() {
         Persistence.projectName = "codebooks"
         if all {
             estante.listbook()
-            for estantesbooks in estante{
-                print(" itens \(estante.books)")
-            }
+        }
+        if generofiltro != nil {
+            estante.filterbookgenre(genero: generofiltro!)
+        }
+        if statusfiltro != nil {
+            estante.filterbookstatus(status: statusfiltro!)
         }
     }
 }
@@ -94,9 +147,9 @@ struct lib: ParsableCommand {
 
 struct add: ParsableCommand {
     static var configuration = CommandConfiguration(
-        abstract: "Adiciona um novo item na lista",
+        abstract: "Add a new title to the book list",
         usage: "codebooks add [option][option]",
-        discussion: "add a new item to the title list"
+        discussion: "Add a new item to the book list"
     )
     @Option(name: .shortAndLong, help: "book name")
     var titulo: String
@@ -109,36 +162,35 @@ struct add: ParsableCommand {
         Persistence.projectName = "codebooks"
         estante.addbook(titulo: titulo, genero: genero, status: status)
         print("titulo: \(titulo), genero: \(genero), status: \(status)")
-        /*addi(titulo: titulo, genero: genero, status: status)
-         book.append(nomes(titulo: titulo, genero: genero, status: status))
-         print(book)*/
     }
 }
 struct del: ParsableCommand {
     static var configuration = CommandConfiguration(
-        abstract: "Deleta um item da lista de titulos",
+        abstract: "Delete a title from the book list ",
         usage: "codebooks delete [option]",
-        discussion: "delete a item to the list"
+        discussion: "Delete a title to the list"
     )
     @Option(name: .shortAndLong, help: "book name")
     var titulo: String
     func run() {
         Persistence.projectName = "codebooks"
-        print("entrou em delete!")
+        estante.delbook(titulo: titulo)
+        print("Book have been delete from codebook-reading list!")
     }
 }
 struct edit: ParsableCommand {
     static var configuration = CommandConfiguration(
-        abstract: "Edita itens que já foram salvos na lista",
+        abstract: "Edit items that have been saved in the list",
         usage: "codebooks edit [option]",
-        discussion: "edit a item to the list"
+        discussion: "Edit a item to the list"
     )
-    @Option(name: .shortAndLong, help: "book name")
+    @Option(name: .shortAndLong, help: "Book name")
     var titulo: String
-    @Option(name: .long, help: "edit status book")
+    @Option(name: .long, help: "Edit status book")
     var edStatus: String
     func run() {
         Persistence.projectName = "codebooks"
-        print("entrou em editar!")
+        estante.editbook(titulo: titulo, editstatus: edStatus)
+        print("Update status successfully!")
     }
 }
