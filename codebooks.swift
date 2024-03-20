@@ -6,19 +6,23 @@
 
 import Foundation
 import ArgumentParser
+import Table
 
-struct database: Codable {
+struct Database: Codable {
     var titulo: String
     var genero: String
     var status: String
     
+    var description: String {
+        return "\(["📗", "📕", "📘"].randomElement()!) \(titulo), \(genero), \(status)"
+    }
 }
 
 struct Estante: Codable {
-    var books: [database] = []
+    var books: [Database] = []
     
     mutating func addbook(titulo: String, genero: String, status: String) {
-        let novolivro = database(titulo: titulo, genero: genero, status: status)
+        let novolivro = Database(titulo: titulo, genero: genero, status: status)
         books.append(novolivro)
         do {
             try Persistence.saveJson(self, file: "estante.json")
@@ -34,7 +38,7 @@ struct Estante: Codable {
             print("Erro salvando estante", error)
         }
     }
-    mutating func editbook(titulo: String, editstatus: String){
+    mutating func editbook( titulo: String, editstatus: String) {
         if let position = books.firstIndex(where: { $0.titulo == titulo}){
             books[position].status = editstatus
         }
@@ -47,14 +51,20 @@ struct Estante: Codable {
 
     func listbook() {
         var count: Int = 1
+//        var arrlist: [String] = []
+       // let arrtitulo = [livro.titulo, livro.genero, livro.status]
         for livro in books {
-            print("livro \(count): \(livro)")
+            print("livro \(count): \(livro.description)")
+           // print(table:[livro.titulo, livro.genero, livro.status], header:["Titulo", "Genero", "Status"])
+//arrlist.append(arrtitulo)
             count += 1
         }
+        print(books.description[1])
+        //print(table:, header:["Titulo", "Genero", "Status"])
+        
     }
-    
     func filterbookgenre(genero: String){
-        var genreFilterBook: [database] = []
+        var genreFilterBook: [Database] = []
         var count: Int = 1
         for livro in books {
             if livro.genero.contains(genero){
@@ -68,8 +78,8 @@ struct Estante: Codable {
         }
     }
     
-    func filterbookstatus(status: String){
-        var statusFilterBook: [database] = []
+    func filterbookstatus(status: String) {
+        var statusFilterBook: [Database] = []
         var count: Int = 1
         for livro in books {
             if livro.status.contains(status){
@@ -83,6 +93,31 @@ struct Estante: Codable {
         }
     }
     
+    func filterBook(genero: String?, status: String? ) {
+        var filterBook: [Database] = []
+        if genero != nil && status == nil {
+            filterBook = books.filter({ $0.genero == genero })
+            print("nova array filtrada: \(filterBook)")
+        }
+        else if genero == nil && status != nil {
+            filterBook = books.filter({ $0.status == status })
+            print("nova array filtrada: \(filterBook)")
+        }
+        filterBook = books.filter({ $0.status == status && $0.genero == genero })
+        //print("nova array filtrada: \(filterBook)")
+    }
+    
+    enum ANSIColors: String {
+        case red = "\u{001B}[0;31m"
+        case reset = "\u{001B}[0m"
+    }
+    func colorizeString(_ text: String, withColor color: ANSIColors) -> String {
+        return color.rawValue + text + ANSIColors.reset.rawValue
+    }
+
+    func colorizeASCII(_ ascii: String, withColor color: ANSIColors) {
+        print(color.rawValue + ascii + ANSIColors.reset.rawValue)
+    }
 }
 
 var estante: Estante = (try? Persistence.readJson(file: "estante.json")) ?? Estante()
@@ -95,8 +130,25 @@ struct codebooks: ParsableCommand {
         subcommands: [lib.self, add.self, del.self, edit.self]
     )
     mutating func run() throws {
+        
+        let imgInicial =
+        #"""
+        
+               .--.                                                                                                         .---
+           .---|__|                                                                                                 .-.     |~~~|
+        .--|===|--|_         ____   U  ___ u  ____  U _____ u   ____     U  ___ u   U  ___ u   _  __   ____         |_|     |~~~|--.
+        |  |===|  |'\     U /"___|   \/"_ \/ |  _"\ \| ___"|/U | __")u    \/"_ \/    \/"_ \/  |"|/ /  / __"| u  .---!~|  .--|   |--|
+        |%%|   |  |.'\    \| | u     | | | |/| | | | |  _|"   \|  _ \/    | | | |    | | | |  | ' /  <\___ \/   |===| |--|%%|   |  |
+        |%%|   |  |\.'\    | |/__.-,_| |_| |U| |_| |\| |___    | |_) |.-,_| |_| |.-,_| |_| |U/| . \\u u___) |   |   | |__|  |   |  |
+        |  |   |  | \  \    \____|\_)-\___/  |____/ u|_____|   |____/  \_)-\___/  \_)-\___/   |_|\_\  |____/>>  |===| |==|  |   |  |
+        |  |   |__|  \.'\  _// \\      \\     |||_   <<   >>  _|| \\_       \\         \\    ,_,>> \\,-.)(  (__)|   |_|__|  |~~~|__|
+        |  |===|--|   \.'\(__)(__)    (__)   (__)_) (__) (__)(__) (__)     (__)       (__)   \.)   (_/(__)      |===|~|--|%%|~~~|--|
+        ^--^---'--^    `-'                                                                                      `---^-^--^--^---'--'
+        """#
+        
+        
         Persistence.projectName = "codebooks"
-        print("programa inicio")
+        estante.colorizeASCII(imgInicial, withColor: .red)
     }
 }
 struct lib: ParsableCommand {
@@ -120,12 +172,21 @@ struct lib: ParsableCommand {
         if all {
             estante.listbook()
         }
-        if generofiltro != nil {
+        estante.filterBook(genero: generofiltro, status: statusfiltro)
+        /*if let generofiltro, let statusfiltro {
+           
+        }*/
+        /*
+        if generofiltro != nil && statusfiltro != nil{
+            estante.filterBook(genero: generofiltro!, status: statusfiltro!)
+        }*/
+        /*if generofiltro != nil {
             estante.filterbookgenre(genero: generofiltro!)
+            estante.filterBook(genero: generofiltro, status: statusfiltro)
         }
         if statusfiltro != nil {
             estante.filterbookstatus(status: statusfiltro!)
-        }
+        }*/
     }
 }
 
