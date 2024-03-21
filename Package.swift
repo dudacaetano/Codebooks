@@ -9,7 +9,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
         .package(url: "https://github.com/realm/SwiftLint", from: "0.54.0"),
-        .package(url: "https://github.com/ShawnBaek/Table", .upToNextMajor(from: "1.3.4")),
+        .package(url: "https://github.com/JanGorman/Table",from: "1.0.0"),
         
     ],
     targets: [
@@ -19,10 +19,10 @@ let package = Package(
             name: "codebooks",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                .product(name: "Table", package: "Table")
+                .product(name: "Table", package: "Table"),
             ],
             plugins: [.plugin(name: "SwiftLintPlugin", package: "SwiftLint")]
-        ),
+        )
         
     ]
 )
