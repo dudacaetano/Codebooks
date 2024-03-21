@@ -48,21 +48,25 @@ struct Estante: Codable {
             print("Erro salvando estante", error)
         }
     }
+    mutating func listbook() throws {
+        var data: [[Any]] = [["📚","TITULO", "GENERO", "STATUS"]]
+        let columns = [
+            Column(alignment: .left, width: 10),
+            Column(alignment: .center, width: 10),
+            Column(alignment: .right, width: 10),
+            Column(alignment: .right, width: 10)
 
-    func listbook() {
-        var count: Int = 1
-//        var arrlist: [String] = []
-       // let arrtitulo = [livro.titulo, livro.genero, livro.status]
-        for livro in books {
-            print("livro \(count): \(livro.description)")
-           // print(table:[livro.titulo, livro.genero, livro.status], header:["Titulo", "Genero", "Status"])
-//arrlist.append(arrtitulo)
-            count += 1
-        }
-        print(books.description[1])
-        //print(table:, header:["Titulo", "Genero", "Status"])
+            ]
         
+        for livro in books {
+            data.append([(["📗", "📕", "📘"].randomElement()!), livro.titulo, livro.genero, livro.status])
+        }
+        let configuration = Configuration(columns: columns)
+        let table = try Table(data: data).table()
+        
+        print(table)
     }
+    
     func filterbookgenre(genero: String){
         var genreFilterBook: [Database] = []
         var count: Int = 1
@@ -109,6 +113,10 @@ struct Estante: Codable {
     
     enum ANSIColors: String {
         case red = "\u{001B}[0;31m"
+        case green = "\u{001B}[0;32m"
+        case yellow = "\u{001B}[0;33m"
+        case blue = "\u{001B}[0;34m"
+        case white = "\u{001B}[0;37m"
         case reset = "\u{001B}[0m"
     }
     func colorizeString(_ text: String, withColor color: ANSIColors) -> String {
@@ -118,6 +126,7 @@ struct Estante: Codable {
     func colorizeASCII(_ ascii: String, withColor color: ANSIColors) {
         print(color.rawValue + ascii + ANSIColors.reset.rawValue)
     }
+    
 }
 
 var estante: Estante = (try? Persistence.readJson(file: "estante.json")) ?? Estante()
@@ -146,9 +155,10 @@ struct codebooks: ParsableCommand {
         ^--^---'--^    `-'                                                                                      `---^-^--^--^---'--'
         """#
         
-        
         Persistence.projectName = "codebooks"
-        estante.colorizeASCII(imgInicial, withColor: .red)
+        estante.colorizeASCII(imgInicial, withColor: .blue)
+        estante.colorizeASCII("This tool was developed to organize your beloved books.It works like a virtual bookshelf, where the user types the title of the book,add its status and place it in a category", withColor: .green)
+
     }
 }
 struct lib: ParsableCommand {
@@ -167,26 +177,26 @@ struct lib: ParsableCommand {
     @Option(name: .short, help: "filter the book according to reading status")
     var statusfiltro: String?
     
-    func run() {
+    mutating func run() throws{
         Persistence.projectName = "codebooks"
         if all {
-            estante.listbook()
+            try estante.listbook()
         }
-        estante.filterBook(genero: generofiltro, status: statusfiltro)
-        /*if let generofiltro, let statusfiltro {
+        /*estante.filterBook(genero: generofiltro, status: statusfiltro)
+        if let generofiltro, let statusfiltro {
            
-        }*/
-        /*
+        }
+        */
         if generofiltro != nil && statusfiltro != nil{
-            estante.filterBook(genero: generofiltro!, status: statusfiltro!)
-        }*/
-        /*if generofiltro != nil {
-            estante.filterbookgenre(genero: generofiltro!)
-            estante.filterBook(genero: generofiltro, status: statusfiltro)
+            estante.filterBook(genero: generofiltro!.uppercased(), status: statusfiltro!.uppercased())
+        }
+        if generofiltro != nil {
+            estante.filterbookgenre(genero: generofiltro!.uppercased())
+            //estante.filterBook(genero: generofiltro, status: statusfiltro)
         }
         if statusfiltro != nil {
-            estante.filterbookstatus(status: statusfiltro!)
-        }*/
+            estante.filterbookstatus(status: statusfiltro!.uppercased())
+        }
     }
 }
 
@@ -221,7 +231,7 @@ struct add: ParsableCommand {
 
     func run() {
         Persistence.projectName = "codebooks"
-        estante.addbook(titulo: titulo, genero: genero, status: status)
+        estante.addbook(titulo: titulo.uppercased(), genero: genero.uppercased(), status: status.uppercased())
         print("titulo: \(titulo), genero: \(genero), status: \(status)")
     }
 }
@@ -235,7 +245,7 @@ struct del: ParsableCommand {
     var titulo: String
     func run() {
         Persistence.projectName = "codebooks"
-        estante.delbook(titulo: titulo)
+        estante.delbook(titulo: titulo.uppercased())
         print("Book have been delete from codebook-reading list!")
     }
 }
@@ -251,7 +261,7 @@ struct edit: ParsableCommand {
     var edStatus: String
     func run() {
         Persistence.projectName = "codebooks"
-        estante.editbook(titulo: titulo, editstatus: edStatus)
+        estante.editbook(titulo: titulo.uppercased(), editstatus: edStatus.uppercased())
         print("Update status successfully!")
     }
 }
