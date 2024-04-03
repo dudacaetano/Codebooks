@@ -62,7 +62,7 @@ struct Estante: Codable {
         }
     }
     mutating func editbook( titulo: String, editstatus: String) {
-        if let position = books.firstIndex(where: { $0.titulo == titulo}){
+        if let position = books.firstIndex(where: { $0.titulo == titulo}) {
             books[position].status = editstatus
         }
         do {
@@ -265,7 +265,7 @@ struct add: ParsableCommand {
     @Option(name: .shortAndLong, help: "Book gender.")
     var genero: String
 
-    func run() {
+    mutating func run() {
         Persistence.projectName = "codebooks"
         estante.addbook(titulo: titulo.uppercased(), genero: genero.uppercased(), status: status.uppercased())
         print("titulo: \(titulo), genero: \(genero), status: \(status)")
@@ -284,7 +284,7 @@ struct del: ParsableCommand {
         Persistence.projectName = "codebooks"
         estante.delbook(titulo: titulo.uppercased())
         print("Book have been delete from codebook-reading list!")
-//        estante.colorizeASCII("For more information <USAGE> codebooks del --help", withColor: .green)
+        estante.colorizeASCII("For more information <USAGE> codebooks del --help", withColor: .green)
 
     }
 }
@@ -302,7 +302,7 @@ struct edit: ParsableCommand {
         Persistence.projectName = "codebooks"
         estante.editbook(titulo: titulo.uppercased(), editstatus: editing.uppercased())
         print("Update status successfully!")
-//        estante.colorizeASCII("For more information <USAGE> codebooks edit --help", withColor: .green)
+        estante.colorizeASCII("For more information <USAGE> codebooks edit --help", withColor: .green)
 
     }
 }
